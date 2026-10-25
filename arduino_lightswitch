@@ -1,0 +1,60 @@
+#include <SPI.h>
+#include <MFRC522.h>
+#include <Servo.h>
+
+#define SS_PIN 10
+#define RST_PIN 9
+
+MFRC522 rfid(SS_PIN, RST_PIN);
+Servo doorServo;
+
+unsigned long lastSeen = 0;
+const unsigned long timeout = 1000;   // ms without a read = door open
+bool cardEverSeen = false;
+bool doorIsOpen = false;
+
+unsigned long lastTrigger = 0;
+const unsigned long cooldown = 2000;  // won't re-trigger within 2 sec of last one
+
+bool useFirstAngle = true;   // tracks which angle to use next
+const int angleX = 120;      // <-- change to your liking
+const int angleY = 60;       // <-- change to your liking
+const int restAngle = 90;
+
+void setup() {
+  Serial.begin(9600);
+  SPI.begin();
+  rfid.PCD_Init();
+
+  doorServo.attach(5);
+  doorServo.write(restAngle);
+
+  Serial.println("Ready.");
+}
+
+void loop() {
+  bool cardSeenThisLoop = rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial();
+
+  if (cardSeenThisLoop) {
+    lastSeen = millis();
+    cardEverSeen = true;
+    doorIsOpen = false;
+    rfid.PICC_HaltA();
+    rfid.PCD_StopCrypto1();
+  }
+
+  if (cardEverSeen && !doorIsOpen && (millis() - lastSeen > timeout) && (millis() - lastTrigger > cooldown)) {
+    doorIsOpen = true;
+    lastTrigger = millis();
+
+    int targetAngle = useFirstAngle ? angleX : angleY;
+    Serial.print("Triggered - moving to angle: ");
+    Serial.println(targetAngle);
+
+    doorServo.write(targetAngle);
+    delay(300);
+    doorServo.write(restAngle);
+
+    useFirstAngle = !useFirstAngle;
+  }
+}
