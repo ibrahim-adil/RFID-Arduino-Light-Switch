@@ -102,3 +102,7 @@ void loop() {
 
 * **Non-Blocking Logic:** Utilized `millis()` instead of `delay()` inside the main loop to keep sensor reading active and responsive.
 * **State Management:** Implemented an immediate pulse-and-reset mechanism (`restAngle`) so the servo motor releases force after toggling the wall switch, avoiding continuous current draw and gear strain.
+
+
+https://github.com/user-attachments/assets/f89f5304-4b10-4c35-8cf9-2f687debb975
+
